@@ -1,0 +1,14 @@
+
+[tcp]
+  [tcp.t1]
+  from = "localhost:9001"
+  to = "localhost:9002"
+
+[udp]
+  [udp.u1]
+  from = "localhost:9101"
+  to = "localhost:9102"
+
+[http]
+  [http.h1]
+  listen = "localhost:9201"
