@@ -12,3 +12,15 @@
 [http]
   [http.h1]
   listen = "localhost:9201"
+    [[http.h1.basic_auth]]
+    user = "user1"
+    password = "password1"
+    [[http.h1.basic_auth]]
+    # can give password without user (user can be anything)
+    password = "password2"
+
+  [http.h2]
+  listen = "localhost:9202"
+  basic_auth = [
+        { password = "password3" }
+  ]

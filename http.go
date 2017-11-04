@@ -7,11 +7,20 @@ import (
 	"time"
 )
 
+func (auth BasicAuth) validate(user, password string) bool {
+	if auth.Password == password {
+		if auth.User == "" || auth.User == user {
+			return true
+		}
+	}
+	return false
+}
+
 func (p HttpProxy) Start() {
 	log.Printf("proxy is %v\n", p)
 	srv := http.Server{
 		Addr:         p.Listen,
-		Handler:      http.HandlerFunc(httpHandler),
+		Handler:      http.HandlerFunc(p.httpHandler),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
@@ -21,9 +30,39 @@ func (p HttpProxy) Start() {
 	}
 }
 
-func httpHandler(w http.ResponseWriter, r *http.Request) {
+func (p HttpProxy) shouldCheckBasicAuth() bool {
+	return len(p.BasicAuth) > 0
+}
+
+func (p HttpProxy) checkBasicAuth(r *http.Request) bool {
+	if !p.shouldCheckBasicAuth() {
+		return true
+	}
+
+	auth := r.Header.Get("Proxy-Authorization")
+
+	user, password, ok := parseBasicAuth(auth)
+	log.Printf("user", user, password, ok)
+	if !ok {
+		return ok
+	}
+	for _, auth_user := range p.BasicAuth {
+		log.Printf("user", user, password, auth_user)
+		if auth_user.validate(user, password) {
+			return true
+		}
+	}
+	return false
+}
+
+func (p HttpProxy) httpHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "CONNECT" {
-		w.Write([]byte("wrong request!"))
+		http.Error(w, "wrong request!", 400)
+		return
+	}
+	if !p.checkBasicAuth(r) {
+		log.Printf("Authentication failed")
+		http.Error(w, "auth failed!", 400)
 		return
 	}
 

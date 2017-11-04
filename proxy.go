@@ -16,12 +16,18 @@ type Config struct {
 }
 
 type HttpProxy struct {
-	Listen string
+	Listen    string
+	BasicAuth []BasicAuth `toml:"basic_auth"`
 }
 
 type server struct {
 	From string
 	To   string
+}
+
+type BasicAuth struct {
+	User     string
+	Password string
 }
 
 func main() {
@@ -39,6 +45,7 @@ func main() {
 	}
 
 	for _, proxy := range config.HttpProxies {
+		log.Printf("http %+v", proxy)
 		go proxy.Start()
 	}
 
