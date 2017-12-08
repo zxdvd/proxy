@@ -29,6 +29,13 @@ func (p HttpProxy) Start() {
 	if err != nil {
 		log.Printf("http failed to listen on %s\n", p.Listen)
 	}
+	if p.certFile != "" && p.keyFile != "" {
+		err = srv.ListenAndServeTLS(p.certFile, p.keyFile)
+		if err != nil {
+			log.Printf("https failed on %s\n", p.Listen)
+			log.Printf("https error: %v\n", err)
+		}
+	}
 }
 
 func (p HttpProxy) shouldCheckBasicAuth() bool {
@@ -43,7 +50,6 @@ func (p HttpProxy) checkBasicAuth(r *http.Request) bool {
 	auth := r.Header.Get("Proxy-Authorization")
 
 	user, password, ok := parseBasicAuth(auth)
-	log.Printf("user", user, password, ok)
 	if !ok {
 		return ok
 	}

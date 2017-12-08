@@ -10,14 +10,17 @@ type TcpProxy server
 type UdpProxy server
 
 type Config struct {
-	TcpProxies  map[string]TcpProxy  `toml:"tcp"`
-	UdpProxies  map[string]UdpProxy  `toml:"udp"`
-	HttpProxies map[string]HttpProxy `toml:"http"`
+	TcpProxies   map[string]TcpProxy  `toml:"tcp"`
+	UdpProxies   map[string]UdpProxy  `toml:"udp"`
+	HttpProxies  map[string]HttpProxy `toml:"http"`
+	HttpsProxies map[string]HttpProxy `toml:"https"`
 }
 
 type HttpProxy struct {
 	Listen    string
 	BasicAuth []BasicAuth `toml:"basic_auth"`
+	certFile  string      `toml:"cert"`
+	keyFile   string      `toml:"key"`
 }
 
 type server struct {
@@ -45,6 +48,10 @@ func main() {
 	}
 
 	for _, proxy := range config.HttpProxies {
+		go proxy.Start()
+	}
+
+	for _, proxy := range config.HttpsProxies {
 		go proxy.Start()
 	}
 

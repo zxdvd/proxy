@@ -24,3 +24,12 @@
   basic_auth = [
         { password = "password3" }
   ]
+
+[https]
+  [https.h1]
+  listen = "localhost:9301"
+  cert = "./server.crt"
+  key = "./server.key"
+  basic_auth = [
+        { user = "u1", password = "123456" }
+  ]
