@@ -45,7 +45,6 @@ func main() {
 	}
 
 	for _, proxy := range config.HttpProxies {
-		log.Printf("http %+v", proxy)
 		go proxy.Start()
 	}
 

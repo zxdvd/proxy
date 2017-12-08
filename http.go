@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"time"
 )
 
@@ -17,7 +18,7 @@ func (auth BasicAuth) validate(user, password string) bool {
 }
 
 func (p HttpProxy) Start() {
-	log.Printf("proxy is %v\n", p)
+	log.Printf("http proxy: %+v\n", p)
 	srv := http.Server{
 		Addr:         p.Listen,
 		Handler:      http.HandlerFunc(p.httpHandler),
@@ -47,7 +48,6 @@ func (p HttpProxy) checkBasicAuth(r *http.Request) bool {
 		return ok
 	}
 	for _, auth_user := range p.BasicAuth {
-		log.Printf("user", user, password, auth_user)
 		if auth_user.validate(user, password) {
 			return true
 		}
@@ -55,14 +55,24 @@ func (p HttpProxy) checkBasicAuth(r *http.Request) bool {
 	return false
 }
 
-func (p HttpProxy) httpHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "CONNECT" {
-		http.Error(w, "wrong request!", 400)
-		return
+func empty(req *http.Request) {}
+
+func HttpForwardProxy(w http.ResponseWriter, r *http.Request) {
+	p := &httputil.ReverseProxy{
+		Director: empty,
 	}
+	p.ServeHTTP(w, r)
+}
+
+func (p HttpProxy) httpHandler(w http.ResponseWriter, r *http.Request) {
 	if !p.checkBasicAuth(r) {
 		log.Printf("Authentication failed")
 		http.Error(w, "auth failed!", 400)
+		return
+	}
+
+	if r.Method != "CONNECT" {
+		HttpForwardProxy(w, r)
 		return
 	}
 
@@ -86,7 +96,7 @@ func (p HttpProxy) httpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
-	conn.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
+	conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 
 	duplexCopy(conn, target)
 }
